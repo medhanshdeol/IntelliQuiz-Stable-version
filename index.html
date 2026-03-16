@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IntelliQuiz AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white min-h-screen flex flex-col items-center p-10">
+
+    <h1 class="text-4xl font-bold mb-4 text-blue-400">🧠 IntelliQuiz AI</h1>
+    
+    <div id="scoreBoard" class="hidden mb-6 bg-gray-800 px-6 py-2 rounded-full border border-blue-500 text-lg font-bold">
+        Score: <span id="correctCount" class="text-green-400">0</span> / <span id="totalCount">0</span>
+    </div>
+
+    <div class="flex gap-2 mb-10 w-full max-w-md">
+        <input type="text" id="topicInput" placeholder="Enter a topic..." 
+               class="flex-1 p-3 rounded bg-gray-800 border border-gray-700 outline-none focus:border-blue-500">
+        <button onclick="getQuiz()" class="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded font-bold transition">Generate</button>
+    </div>
+
+    <div id="loading" class="hidden mb-10 text-xl animate-pulse text-yellow-500">Connecting to Gemini AI...</div>
+
+    <div id="quizContainer" class="w-full max-w-2xl space-y-6"></div>
+
+    <script>
+        let correctAnswers = 0;
+        let totalQuestions = 0;
+
+        async function getQuiz() {
+            const topic = document.getElementById('topicInput').value;
+            const container = document.getElementById('quizContainer');
+            const loading = document.getElementById('loading');
+            const scoreBoard = document.getElementById('scoreBoard');
+
+            if (!topic) return alert("Please enter a topic!");
+
+            // Reset scores for new quiz
+            correctAnswers = 0;
+            document.getElementById('correctCount').innerText = "0";
+            
+            loading.classList.remove('hidden');
+            scoreBoard.classList.add('hidden');
+            container.innerHTML = '';
+
+            try {
+                const response = await fetch(`http://localhost:8000/generate-quiz?topic=${topic}`);
+                const data = await response.json();
+
+                loading.classList.add('hidden');
+                scoreBoard.classList.remove('hidden');
+                
+                totalQuestions = data.length;
+                document.getElementById('totalCount').innerText = totalQuestions;
+
+                data.forEach((q, index) => {
+                    const card = document.createElement('div');
+                    card.className = "bg-gray-800 p-6 rounded-lg shadow-lg border-l-4 border-blue-500 animate-fadeIn";
+                    
+                    let optionsHtml = q.options.map(opt => `
+                        <button onclick="checkAnswer(this, '${q.answer.replace(/'/g, "\\'")}')" 
+                                class="w-full text-left p-3 my-2 bg-gray-700 hover:bg-gray-600 rounded transition border border-transparent">
+                            ${opt}
+                        </button>
+                    `).join('');
+
+                    card.innerHTML = `
+                        <h3 class="text-xl font-semibold mb-4">${index + 1}. ${q.question}</h3>
+                        <div class="options-group">${optionsHtml}</div>
+                    `;
+                    container.appendChild(card);
+                });
+            } catch (err) {
+                loading.innerText = "Error! Make sure your Python server is running.";
+            }
+        }
+
+        function checkAnswer(button, correct) {
+            const isCorrect = button.innerText.trim() === correct.trim();
+            
+            if (isCorrect) {
+                button.classList.add('bg-green-600', 'border-green-400');
+                button.innerText += " ✅";
+                correctAnswers++;
+                document.getElementById('correctCount').innerText = correctAnswers;
+            } else {
+                button.classList.add('bg-red-600', 'border-red-400');
+                button.innerText += " ❌";
+            }
+
+            // Disable all buttons in this specific question card
+            const parent = button.closest('.options-group');
+            const buttons = parent.querySelectorAll('button');
+            buttons.forEach(btn => {
+                btn.disabled = true;
+                btn.classList.remove('hover:bg-gray-600');
+                // Highlight the correct answer if the user got it wrong
+                if (!isCorrect && btn.innerText.trim() === correct.trim()) {
+                    btn.classList.add('text-green-400', 'font-bold');
+                }
+            });
+        }
+    </script>
+
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fadeIn { animation: fadeIn 0.5s ease forwards; }
+    </style>
+</body>
+</html>
