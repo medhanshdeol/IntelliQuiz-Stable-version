@@ -3,112 +3,175 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IntelliQuiz AI</title>
+    <title>IntelliQuiz | AI & ML Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #000; }
+        .bg-sky-blue { background-color: #0ea5e9; }
+        .text-sky-blue { color: #0ea5e9; }
+        .bg-action-red { background-color: #ef4444; }
+        
+        @keyframes slideIn { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
+        .animate-slide-in { animation: slideIn 0.4s ease-out forwards; }
+        
+        .custom-scroll::-webkit-scrollbar { width: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #ef4444; border-radius: 10px; }
+    </style>
 </head>
-<body class="bg-gray-900 text-white min-h-screen flex flex-col items-center p-10">
+<body class="text-white min-h-screen overflow-hidden">
 
-    <h1 class="text-4xl font-bold mb-4 text-blue-400">🧠 IntelliQuiz AI</h1>
-    
-    <div id="scoreBoard" class="hidden mb-6 bg-gray-800 px-6 py-2 rounded-full border border-blue-500 text-lg font-bold">
-        Score: <span id="correctCount" class="text-green-400">0</span> / <span id="totalCount">0</span>
+    <div class="flex flex-col md:flex-row h-screen">
+        
+        <div class="w-full md:w-5/12 bg-sky-blue p-10 flex flex-col justify-between text-black relative">
+            <div>
+                <h2 class="text-xl font-black uppercase tracking-widest mb-1">STABLE VERSION</h2>
+                <div class="w-12 h-2 bg-black"></div>
+            </div>
+            
+            <div>
+                <h1 class="text-7xl md:text-9xl font-black leading-none mb-4 uppercase tracking-tighter">
+                    Intelli<br>Quiz.
+                </h1>
+                <p class="text-lg font-bold max-w-xs leading-tight uppercase">
+                    GENERATIVE AI TUTOR • NATIVE ML ENGINE.
+                </p>
+            </div>
+
+            <div class="text-xs font-black uppercase border-t-4 border-black pt-4 inline-block">
+                Project 2026
+            </div>
+        </div>
+
+        <div class="w-full md:w-7/12 p-8 md:p-16 overflow-y-auto custom-scroll bg-black">
+            
+            <div class="mb-12">
+                <div id="scoreBoard" class="hidden mb-10 animate-slide-in">
+                    <div class="flex items-center gap-6">
+                        <span class="bg-action-red text-white px-6 py-2 font-black text-xs uppercase italic skew-x-[-15deg]">Score</span>
+                        <span class="text-6xl font-black tracking-tighter"><span id="correctCount">0</span><span class="text-sky-blue">/</span><span id="totalCount">0</span></span>
+                    </div>
+                </div>
+
+                <div class="flex flex-col gap-6">
+                    <input type="text" id="topicInput" placeholder="ENTER TOPIC" 
+                           class="bg-transparent border-b-8 border-white text-3xl font-black p-2 outline-none focus:border-sky-blue placeholder:text-gray-800 uppercase italic">
+                    
+                    <div class="flex gap-4">
+                        <button onclick="getQuiz()" class="bg-white text-black px-10 py-5 font-black uppercase hover:bg-sky-blue transition-all active:scale-95 text-lg">
+                            Build Quiz
+                        </button>
+                        <button onclick="runML()" class="border-4 border-white px-10 py-5 font-black uppercase hover:bg-action-red transition-all active:scale-95 text-lg">
+                            ML Analysis
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="loading" class="hidden flex flex-col items-center justify-center py-10 animate-slide-in">
+                <div class="w-16 h-16 border-8 border-white/10 border-t-sky-blue rounded-full animate-spin mb-4"></div>
+                <p class="text-sky-blue text-xl font-black uppercase tracking-widest">Generating 10 Questions...</p>
+            </div>
+            
+            <div id="mlOutput" class="hidden mb-12 animate-slide-in">
+                <pre id="mlResultsText" class="bg-zinc-900 p-8 text-xs text-sky-blue font-mono border-l-8 border-sky-blue overflow-x-auto"></pre>
+            </div>
+
+            <div id="quizContainer" class="space-y-6"></div>
+        </div>
     </div>
-
-    <div class="flex gap-2 mb-10 w-full max-w-md">
-        <input type="text" id="topicInput" placeholder="Enter a topic..." 
-               class="flex-1 p-3 rounded bg-gray-800 border border-gray-700 outline-none focus:border-blue-500">
-        <button onclick="getQuiz()" class="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded font-bold transition">Generate</button>
-    </div>
-
-    <div id="loading" class="hidden mb-10 text-xl animate-pulse text-yellow-500">Connecting to Gemini AI...</div>
-
-    <div id="quizContainer" class="w-full max-w-2xl space-y-6"></div>
 
     <script>
         let correctAnswers = 0;
-        let totalQuestions = 0;
 
         async function getQuiz() {
             const topic = document.getElementById('topicInput').value;
             const container = document.getElementById('quizContainer');
-            const loading = document.getElementById('loading');
-            const scoreBoard = document.getElementById('scoreBoard');
+            if (!topic) return alert("TOPIC REQUIRED");
 
-            if (!topic) return alert("Please enter a topic!");
-
-            // Reset scores for new quiz
             correctAnswers = 0;
-            document.getElementById('correctCount').innerText = "0";
-            
-            loading.classList.remove('hidden');
-            scoreBoard.classList.add('hidden');
+            document.getElementById('loading').classList.remove('hidden');
+            document.getElementById('scoreBoard').classList.add('hidden');
             container.innerHTML = '';
 
             try {
-                const response = await fetch(`http://localhost:8000/generate-quiz?topic=${topic}`);
-                const data = await response.json();
+                const res = await fetch(`http://localhost:8000/generate-quiz?topic=${encodeURIComponent(topic)}`);
+                const data = await res.json();
 
-                loading.classList.add('hidden');
-                scoreBoard.classList.remove('hidden');
-                
-                totalQuestions = data.length;
-                document.getElementById('totalCount').innerText = totalQuestions;
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('scoreBoard').classList.remove('hidden');
+                document.getElementById('totalCount').innerText = data.length;
+                document.getElementById('correctCount').innerText = "0";
 
-                data.forEach((q, index) => {
+                data.forEach((q, i) => {
                     const card = document.createElement('div');
-                    card.className = "bg-gray-800 p-6 rounded-lg shadow-lg border-l-4 border-blue-500 animate-fadeIn";
+                    card.className = "group animate-slide-in mb-8";
                     
                     let optionsHtml = q.options.map(opt => `
                         <button onclick="checkAnswer(this, '${q.answer.replace(/'/g, "\\'")}')" 
-                                class="w-full text-left p-3 my-2 bg-gray-700 hover:bg-gray-600 rounded transition border border-transparent">
+                                class="flex-1 bg-white text-black p-4 font-black text-sm uppercase hover:bg-sky-blue transition-all border-r border-black last:border-0 option-btn">
                             ${opt}
                         </button>
                     `).join('');
 
                     card.innerHTML = `
-                        <h3 class="text-xl font-semibold mb-4">${index + 1}. ${q.question}</h3>
-                        <div class="options-group">${optionsHtml}</div>
+                        <div class="bg-zinc-900 p-5 flex items-start gap-6 border-l-8 border-action-red">
+                            <span class="font-black text-3xl text-action-red">0${i+1}</span>
+                            <span class="font-bold uppercase text-lg leading-tight pt-1">${q.question}</span>
+                        </div>
+                        <div class="flex flex-col md:flex-row mt-1 options-group">
+                            ${optionsHtml}
+                        </div>
                     `;
                     container.appendChild(card);
                 });
-            } catch (err) {
-                loading.innerText = "Error! Make sure your Python server is running.";
-            }
+            } catch (err) { alert("SERVER OFFLINE"); }
         }
 
         function checkAnswer(button, correct) {
-            const isCorrect = button.innerText.trim() === correct.trim();
+            const cleanUserSelection = button.innerText.replace(/[.✅✕]/g, '').trim().toLowerCase();
+            const cleanCorrectAnswer = correct.replace(/[.]/g, '').trim().toLowerCase();
             
+            const isCorrect = cleanUserSelection === cleanCorrectAnswer;
+            const parent = button.closest('.group');
+            const buttons = parent.querySelectorAll('.option-btn');
+
             if (isCorrect) {
-                button.classList.add('bg-green-600', 'border-green-400');
-                button.innerText += " ✅";
+                button.classList.remove('bg-white', 'text-black');
+                button.classList.add('bg-sky-blue', 'text-white');
+                button.innerHTML += " ✓";
                 correctAnswers++;
                 document.getElementById('correctCount').innerText = correctAnswers;
             } else {
-                button.classList.add('bg-red-600', 'border-red-400');
-                button.innerText += " ❌";
+                button.classList.remove('bg-white', 'text-black');
+                button.classList.add('bg-action-red', 'text-white');
+                button.innerHTML += " ✕";
+                
+                buttons.forEach(btn => {
+                    const btnText = btn.innerText.replace(/[.✅✕]/g, '').trim().toLowerCase();
+                    if (btnText === cleanCorrectAnswer) {
+                        btn.classList.remove('bg-white', 'text-black');
+                        btn.classList.add('bg-sky-blue', 'text-white', 'font-black');
+                        btn.innerHTML += " [CORRECT]";
+                    }
+                });
             }
+            buttons.forEach(btn => btn.disabled = true);
+        }
 
-            // Disable all buttons in this specific question card
-            const parent = button.closest('.options-group');
-            const buttons = parent.querySelectorAll('button');
-            buttons.forEach(btn => {
-                btn.disabled = true;
-                btn.classList.remove('hover:bg-gray-600');
-                // Highlight the correct answer if the user got it wrong
-                if (!isCorrect && btn.innerText.trim() === correct.trim()) {
-                    btn.classList.add('text-green-400', 'font-bold');
-                }
-            });
+        async function runML() {
+            const topic = document.getElementById('topicInput').value;
+            const out = document.getElementById('mlOutput');
+            const txt = document.getElementById('mlResultsText');
+            if (!topic) return alert("TOPIC REQUIRED");
+            out.classList.remove('hidden');
+            txt.innerText = "CALCULATING...";
+            try {
+                const res = await fetch(`http://localhost:8000/run-ml?topic=${encodeURIComponent(topic)}`);
+                const data = await res.json();
+                txt.innerText = JSON.stringify(data, null, 4);
+            } catch (e) { txt.innerText = "ML ERROR"; }
         }
     </script>
-
-    <style>
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fadeIn { animation: fadeIn 0.5s ease forwards; }
-    </style>
 </body>
 </html>
