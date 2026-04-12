@@ -10,7 +10,7 @@ client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 def generate_quiz(topic):
     print(f"\n🧠 Attempting to generate quiz for: {topic}...")
     
-    # We'll use Gemini 2.5 Flash, the 2026 free-tier stable model
+    # Gemini 2.5 Flash, the 2026 free-tier stable model
     current_model = "gemini-2.5-flash"
     
     try:
