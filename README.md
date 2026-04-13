@@ -24,4 +24,5 @@ Tech Stack
 * **Frontend:** [HTML5,CSS3,JavaScript]
 * **Backend:** [Python FastAPI]
 * **AI:** LLM Integration for content generation
-* **Data Processing:** Custom JavaScript/Python logic for ML calculations (No Scikit-Learn/TensorFlow used).<img width="1919" height="1031" alt="Screenshot 2026-04-08 120556" src="https://github.com/user-attachments/assets/597168ee-cf99-49b4-9ac0-3c21ce428f29" />
+* **Data Processing:** Custom JavaScript/Python logic for ML calculations (No Scikit-Learn/TensorFlow used).<img width="1919" height="1049" alt="Screenshot 2026-04-13 154929" src="https://github.com/user-attachments/assets/e0c4b058-2000-4395-b097-e7412fb5b709" />
+
