@@ -11,7 +11,7 @@ load_dotenv()
 app = FastAPI()
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
-# --- 1. 2026 KERNEL INITIALIZATION ---
+
 api_key = os.getenv("GEMINI_API_KEY")
 client = None
 if api_key:
@@ -20,7 +20,7 @@ if api_key:
 else:
     print("❌ KERNEL ERROR: NO API KEY FOUND")
 
-# --- 2. ML ENGINE ---
+
 def safe_entropy(data):
     if not data: return 0
     labels = [row[-1] for row in data]
@@ -33,7 +33,6 @@ def get_gain(data, idx):
     weighted = sum((len(sub)/len(data)) * safe_entropy(sub) for sub in [[r for r in data if r[idx] == v] for v in vals])
     return total - weighted
 
-# --- 3. ENDPOINTS ---
 @app.get("/", response_class=HTMLResponse)
 async def serve_ui():
     with open("index.html", "r", encoding="utf-8") as f:
@@ -53,11 +52,6 @@ Return ONLY a JSON array, where each element has:
 - 'options': an array of exactly 4 strings
 - 'answer': the correct option from the options array
 
-Example format:
-[
-  {{"question": "...", "options": ["A", "B", "C", "D"], "answer": "A"}}
-]
-"""
         response = client.models.generate_content(
             model='gemini-2.5-flash',
             contents=prompt
